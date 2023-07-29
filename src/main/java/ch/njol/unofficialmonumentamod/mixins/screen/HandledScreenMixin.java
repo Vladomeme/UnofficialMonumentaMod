@@ -2,8 +2,8 @@ package ch.njol.unofficialmonumentamod.mixins.screen;
 
 import ch.njol.unofficialmonumentamod.features.misc.SlotLocking;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
 import org.spongepowered.asm.mixin.Mixin;
@@ -25,24 +25,18 @@ public abstract class HandledScreenMixin {
 	}
 	
 	@Inject(method = "render", at = @At("TAIL"))
-	void umm$onRender(MatrixStack matrices, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-		SlotLocking.getInstance().tickRender(matrices, mouseX, mouseY);
+	void umm$onRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+		SlotLocking.getInstance().tickRender(context, mouseX, mouseY);
 	}
 
-	@Inject(
-			method = "render",
-			at = @At(
-					value = "INVOKE",
-					target = "Lnet/minecraft/client/gui/screen/ingame/HandledScreen;isPointOverSlot(Lnet/minecraft/screen/slot/Slot;DD)Z",
-					shift = Shift.BEFORE
-			),
-			locals = LocalCapture.CAPTURE_FAILSOFT
-	)
-	private void umm$afterDrawnSlot(MatrixStack matrices, int mouseX, int mouseY, float delta, CallbackInfo ci, int i, int j, MatrixStack matrixStack, int k, Slot slot) {
+	@Inject(method = "render", at = @At(value = "INVOKE",
+			target = "Lnet/minecraft/client/gui/screen/ingame/HandledScreen;isPointOverSlot(Lnet/minecraft/screen/slot/Slot;DD)Z", shift = Shift.BEFORE),
+			locals = LocalCapture.CAPTURE_FAILSOFT)
+	private void umm$afterDrawnSlot(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci, int i, int j, int k, Slot slot) {
 		RenderSystem.disableDepthTest();
 		RenderSystem.enableBlend();
 		HandledScreen $this = (HandledScreen) (Object) this;
-		SlotLocking.getInstance().drawSlot($this, matrices, slot);
+		SlotLocking.getInstance().drawSlot($this, context, slot);
 		RenderSystem.enableDepthTest();
 		RenderSystem.disableBlend();
 	}

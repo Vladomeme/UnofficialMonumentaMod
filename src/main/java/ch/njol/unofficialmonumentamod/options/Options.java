@@ -2,6 +2,7 @@ package ch.njol.unofficialmonumentamod.options;
 
 import ch.njol.minecraft.config.annotations.*;
 import ch.njol.minecraft.uiframework.ElementPosition;
+import ch.njol.unofficialmonumentamod.AbilityHandler;
 import ch.njol.unofficialmonumentamod.AbilityOptionPreset;
 import ch.njol.unofficialmonumentamod.UnofficialMonumentaModClient;
 import java.util.ArrayList;
@@ -10,32 +11,35 @@ import java.util.List;
 public class Options implements ch.njol.minecraft.config.Options {
 
 	@Category("misc")
-	public boolean overrideTridentRendering = true;
+	public final boolean overrideTridentRendering = true;
 	@Category("misc")
-	public boolean lowerVillagerHelmets = false;
+	public final boolean lowerVillagerHelmets = false;
 	@Category("misc")
-	public boolean hideVillagerPlayerHeads = false;
+	public final boolean hideVillagerPlayerHeads = false;
 
 	@Category("misc")
-	public boolean firmamentPingFix = true;
+	public final boolean firmamentPingFix = true;
 
 	@Dropdown("chestsort")
 	@Category("misc")
-	public boolean chestsortDisabledForInventory = false;
+	public final boolean chestsortDisabledForInventory = false;
 	@Dropdown("chestsort")
 	@Category("misc")
-	public boolean chestsortDisabledForEnderchest = false;
+	public final boolean chestsortDisabledForEnderchest = false;
 	@Dropdown("chestsort")
 	@Category("misc")
-	public boolean chestsortDisabledEverywhereElse = false;
+	public final boolean chestsortDisabledEverywhereElse = false;
+
+	@Category("misc")
+	public final boolean enableDelveRecognition = true;
 
 	@Dropdown("location")
 	@Category("misc")
-	public boolean notifyLocation = false;
+	public final boolean notifyLocation = false;
 	@Dropdown("location")
 	@Category("misc")
 	@FloatSlider(min = 1.5F, max = 20F, step = 0.1F, unit = " seconds")
-	public float notifierShowTime = 5F;
+	public final float notifierShowTime = 5F;
 
 	// TODO implement item cooldown display
 	// requires sever-side adaptions to send the cooldown (on use and on connect)
@@ -45,41 +49,43 @@ public class Options implements ch.njol.minecraft.config.Options {
 	// public boolean renderItemCooldowns = true;
 
 	@Category("misc")
-	public boolean silenceTeamErrors = true;
+	public final boolean silenceTeamErrors = true;
 
 	@Dropdown("calculator")
 	@Category("misc")
-	public boolean showCalculator = true;
+	public final boolean showCalculator = true;
 	@Dropdown("calculator")
 	@Category("misc")
-	public boolean enableKeybindOutsidePlots = false;
+	public final boolean enableKeybindOutsidePlots = false;
 
 	@Category("misc")
-	public boolean enableTextureSpoofing = true;
+	public final boolean enableTextureSpoofing = true;
 	
 	@Category("misc")
 	public transient DescriptionLine overlay_misc;
 	@Category("misc")
 	@FloatSlider(min = 0F, max = 1F, step = 0.05F, unit = "%")
-	public float overlay_opacity = 0.3F;
+	public final float overlay_opacity = 0.3F;
 
 	@Dropdown("lock")
 	@Category("misc")
 	@FloatSlider(min = 0.2F, max = 10F, step = 0.2F, unit = "s")
-	public float lock_textCooldown = 1F;
+	public final float lock_textCooldown = 1F;
 
 	@Category("abilities")
 	public transient DescriptionLine abilitiesDisplay_info;
 	@Category("abilities")
-	public boolean abilitiesDisplay_enabled = true;
+	public final boolean abilitiesDisplay_enabled = true;
 	@Category("abilities")
-	public boolean abilitiesDisplay_showCooldownAsText = true;
+	public final boolean abilitiesDisplay_showCooldownAsText = true;
 	@Category("abilities")
-	public boolean abilitiesDisplay_hideAbilityRelatedMessages = true;
+	public final boolean abilitiesDisplay_hideAbilityRelatedMessages = true;
 	@Category("abilities")
-	public boolean abilitiesDisplay_inFrontOfChat = false;
+	public final boolean abilitiesDisplay_inFrontOfChat = false;
 	@Category("abilities")
-	public boolean abilitiesDisplay_tooltips = true;
+	public final boolean abilitiesDisplay_tooltips = true;
+	@Category("abilities")
+	public final AbilityHandler.DurationRenderMode abilitiesDisplay_durationRenderMode = AbilityHandler.DurationRenderMode.CIRCLE;
 
 	@Category("abilities")
 	public transient DescriptionLine abilitiesDisplay_positionInfo;
@@ -93,40 +99,40 @@ public class Options implements ch.njol.minecraft.config.Options {
 	@Category("abilities")
 	public transient DescriptionLine abilitiesDisplay_miscInfo;
 	@Category("abilities")
-	public boolean abilitiesDisplay_offCooldownResize = true;
+	public final boolean abilitiesDisplay_offCooldownResize = true;
 	@Category("abilities")
 	@FloatSlider(min = 0, max = 1, step = 0.01f, unit = "%", unitStep = 100)
-	public float abilitiesDisplay_offCooldownFlashIntensity = 1;
+	public final float abilitiesDisplay_offCooldownFlashIntensity = 1;
 	@Category("abilities")
 	@FloatSlider(min = 0, max = 1, step = 0.01f, unit = "%", unitStep = 100)
-	public float abilitiesDisplay_offCooldownSoundVolume = 0f;
+	public final float abilitiesDisplay_offCooldownSoundVolume = 0f;
 	@Category("abilities")
 	@FloatSlider(min = 0, max = 2, step = 0.05f)
-	public float abilitiesDisplay_offCooldownSoundPitchMin = 1f;
+	public final float abilitiesDisplay_offCooldownSoundPitchMin = 1f;
 	@Category("abilities")
 	@FloatSlider(min = 0, max = 2, step = 0.05f)
-	public float abilitiesDisplay_offCooldownSoundPitchMax = 1f;
+	public final float abilitiesDisplay_offCooldownSoundPitchMax = 1f;
 	@Category("abilities")
-	public boolean abilitiesDisplay_offCooldownSoundUseAlt = false;
+	public final boolean abilitiesDisplay_offCooldownSoundUseAlt = false;
 	@Category("abilities")
-	public int abilitiesDisplay_iconSize = 32;
+	public final int abilitiesDisplay_iconSize = 32;
 	@Category("abilities")
-	public int abilitiesDisplay_iconGap = 0;
+	public final int abilitiesDisplay_iconGap = 0;
 	@Category("abilities")
 	@Color
-	public int abilitiesDisplay_textColorRaw = 0xffeeeeee;
+	public final int abilitiesDisplay_textColorRaw = 0xffeeeeee;
 	@Category("abilities")
-	public int abilitiesDisplay_textOffset = 4;
+	public final int abilitiesDisplay_textOffset = 4;
 	@Category("abilities")
-	public boolean abilitiesDisplay_ascendingRenderOrder = false;
+	public final boolean abilitiesDisplay_ascendingRenderOrder = false;
 	@Category("abilities")
-	public boolean abilitiesDisplay_showOnlyOnCooldown = false;
+	public final boolean abilitiesDisplay_showOnlyOnCooldown = false;
 	@Category("abilities")
-	public boolean abilitiesDisplay_alwaysShowAbilitiesWithCharges = false;
+	public final boolean abilitiesDisplay_alwaysShowAbilitiesWithCharges = false;
 	@Category("abilities")
-	public boolean abilitiesDisplay_condenseOnlyOnCooldown = false;
+	public final boolean abilitiesDisplay_condenseOnlyOnCooldown = false;
 	@Category("abilities")
-	public boolean abilitiesDisplay_showPassiveAbilities = false;
+	public final boolean abilitiesDisplay_showPassiveAbilities = false;
 
 	/**
 	 * List of [class]/[ability]
@@ -138,7 +144,7 @@ public class Options implements ch.njol.minecraft.config.Options {
 	 * Discord RPC Configuration
 	 */
 	@Category("discord")
-	public boolean discordEnabled = true;
+	public final boolean discordEnabled = true;
 	/**
 	 * discordDetails replace values:
 	 * {player} returns the player's name
@@ -149,34 +155,38 @@ public class Options implements ch.njol.minecraft.config.Options {
 	 * everything else is a string literal
 	 */
 	@Category("discord")
-	public String discordDetails = "{player} is in {shard}";
+	public final String discordDetails = "{player} is in {shard}";
 
 	@Category("effectOverlay")
-	public boolean effect_enabled = true;
+	public final boolean effect_enabled = true;
 	@Category("effectOverlay")
-	public ElementPosition effect_position = new ElementPosition(0.5f, 0, 0.0f, 0, 0.5f, 0);
+	public final ElementPosition effect_position = new ElementPosition(0.5f, 0, 0.0f, 0, 0.5f, 0);
 
 	@Category("effectOverlay")
-	public boolean effect_compress = true;
+	public final boolean effect_compress = true;
 	@Category("effectOverlay")
-	public boolean effect_textAlightRight = false;
+	public final boolean effect_textAlightRight = false;
 	@Category("effectOverlay")
 	@IntSlider(min = 50, max = 500)
-	public int effect_width = 200;
+	public final int effect_width = 200;
 
 	@Category("chestCountOverlay")
-	public boolean chestCount_enabled = true;
+	public final boolean chestCount_enabled = true;
 	@Category("chestCountOverlay")
-	public ElementPosition chestCount_position = new ElementPosition(1f, 0, 0.0f, 0, 1f, 0);
+	public final ElementPosition chestCount_position = new ElementPosition(1f, 0, 0.0f, 0, 1f, 0);
 
 	@Category("debug")
-	public boolean debugOptionsEnabled = false;
+	public final boolean debugOptionsEnabled = false;
 	@Category("debug")
-	public boolean logPackets = false;
+	public final boolean logPackets = false;
+	@Category("debug")
+	public final boolean shardDebug = false;
+	@Category("debug")
+	public boolean enableChestCountMaxError = true;
 
 	@Dropdown("lock")
 	@Category("debug")
-	public boolean lock_renderDebuggingAdvancedLock = false;
+	public final boolean lock_renderDebuggingAdvancedLock = false;
 
 	public void onUpdate() {
 		if (abilitiesDisplay_preset != AbilityOptionPreset.CUSTOM) {
@@ -184,6 +194,7 @@ public class Options implements ch.njol.minecraft.config.Options {
 			abilitiesDisplay_position = abilitiesDisplay_preset.position.clone();
 			abilitiesDisplay_preset = AbilityOptionPreset.CUSTOM;
 		}
+		UnofficialMonumentaModClient.discordRPC.updateDiscordRPCDetails();
 		UnofficialMonumentaModClient.saveConfig();
 	}
 

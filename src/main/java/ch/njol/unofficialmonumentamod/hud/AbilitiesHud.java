@@ -18,12 +18,12 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.texture.MissingSprite;
 import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -38,7 +38,7 @@ public class AbilitiesHud extends HudElement {
 
 	private String draggedAbility = null;
 
-	public static AbilitiesHud INSTANCE = new AbilitiesHud();
+	public static final AbilitiesHud INSTANCE = new AbilitiesHud();
 
 	private AbilitiesHud() {
 	}
@@ -104,7 +104,7 @@ public class AbilitiesHud extends HudElement {
 	}
 
 	@Override
-	protected void render(MatrixStack matrices, float tickDelta) {
+	protected void render(DrawContext context, float tickDelta) {
 		if (client.options.hudHidden || client.player == null || client.player.isSpectator()) {
 			return;
 		}
@@ -163,35 +163,54 @@ public class AbilitiesHud extends HudElement {
 						float scaledX = x - (scaledIconSize - iconSize) / 2;
 						float scaledY = y - (scaledIconSize - iconSize) / 2;
 
-						drawSprite(matrices, getAbilityIcon(abilityInfo), scaledX, scaledY, scaledIconSize, scaledIconSize);
+						if (abilityInfo.initialDuration != null && abilityInfo.remainingDuration != null) {
+							float durationFraction = abilityInfo.initialDuration <= 0 ? 0 : Math.min(Math.max((abilityInfo.remainingDuration - tickDelta) / abilityInfo.initialDuration, silenceCooldownFraction), 1);
+							if (durationFraction > 0) {
+								if (options.abilitiesDisplay_durationRenderMode == AbilityHandler.DurationRenderMode.CIRCLE) {
+									Utils.drawPartialHollowPolygon(
+											context,
+											(int) scaledX + (iconSize / 2),
+											(int) scaledY + (iconSize / 2),
+											4, ((float) iconSize / 2),
+											360,
+											durationFraction > 0.10 ? 0x00FF00FF : 0xFF0000FF,//If above 10% then green else red
+											durationFraction
+									);
+								} else if (options.abilitiesDisplay_durationRenderMode == AbilityHandler.DurationRenderMode.BAR) {
+									context.drawText(MinecraftClient.getInstance().textRenderer, abilityInfo.remainingDuration + "/" + abilityInfo.initialDuration,
+											(int) scaledX + (iconSize / 2) - MinecraftClient.getInstance().textRenderer.getWidth(abilityInfo.remainingDuration + "/" + abilityInfo.initialDuration) / 2, (int) scaledY - 4, 0xFFFFFFFF, false);
+								}
+							}
+						}
+						context.drawSprite((int) scaledX, (int) scaledY, 0, (int) scaledIconSize, (int) scaledIconSize, getAbilityIcon(abilityInfo));
 
 						// silenceCooldownFraction is >= 0 so this is also >= 0
 						float cooldownFraction = abilityInfo.initialCooldown <= 0 ? 0 : Math.min(Math.max((abilityInfo.remainingCooldown - tickDelta) / abilityInfo.initialCooldown, silenceCooldownFraction), 1);
 						if (cooldownFraction > 0) {
 							Sprite cooldownOverlay = atlas.getSprite(COOLDOWN_OVERLAY);
 							float yOffset = (cooldownOverlay.getContents().getWidth() - cooldownOverlay.getContents().getHeight()) / 2f;
-							drawPartialSprite(matrices, cooldownOverlay, scaledX, scaledY + yOffset, scaledIconSize, scaledIconSize - 2 * yOffset, 0, 1 - cooldownFraction, 1, 1);
+							drawPartialSprite(context, cooldownOverlay, scaledX, scaledY + yOffset, scaledIconSize, scaledIconSize - 2 * yOffset, 0, 1 - cooldownFraction, 1, 1);
 						}
 						if (options.abilitiesDisplay_offCooldownFlashIntensity > 0 && animTicks < 8) {
 							RenderSystem.setShaderColor(1, 1, 1, options.abilitiesDisplay_offCooldownFlashIntensity * (1 - animTicks / 8f));
-							drawSprite(matrices, atlas.getSprite(COOLDOWN_FLASH), scaledX, scaledY, scaledIconSize, scaledIconSize);
+							drawSprite(context, atlas.getSprite(COOLDOWN_FLASH), scaledX, scaledY, scaledIconSize, scaledIconSize);
 							RenderSystem.setShaderColor(1, 1, 1, 1);
 						}
 
-						drawSprite(matrices, getSpriteOrDefault(getBorderFileIdentifier(abilityInfo.className, abilityHandler.silenceDuration > 0), UNKNOWN_CLASS_BORDER), scaledX, scaledY, scaledIconSize, scaledIconSize);
+						drawSprite(context, getSpriteOrDefault(getBorderFileIdentifier(abilityInfo.className, abilityHandler.silenceDuration > 0), UNKNOWN_CLASS_BORDER), scaledX, scaledY, scaledIconSize, scaledIconSize);
 
 					} else {
 
 						if ((abilityInfo.remainingCooldown > 0 || abilityHandler.silenceDuration > 0) && options.abilitiesDisplay_showCooldownAsText) {
 							String cooldownString = "" + (int) Math.ceil(Math.max(Math.max(abilityInfo.remainingCooldown, abilityHandler.silenceDuration), 0) / 20f);
-							drawOutlinedText(matrices, cooldownString,
+							drawOutlinedText(context, cooldownString,
 								x + iconSize - options.abilitiesDisplay_textOffset - this.client.textRenderer.getWidth(cooldownString),
 								y + iconSize - options.abilitiesDisplay_textOffset - this.client.textRenderer.fontHeight,
 								textColor);
 						}
 
 						if (abilityInfo.maxCharges > 1 || abilityInfo.maxCharges == 1 && abilityInfo.initialCooldown <= 0) {
-							drawOutlinedText(matrices, "" + abilityInfo.charges, x + options.abilitiesDisplay_textOffset, y + options.abilitiesDisplay_textOffset, textColor);
+							drawOutlinedText(context, "" + abilityInfo.charges, x + options.abilitiesDisplay_textOffset, y + options.abilitiesDisplay_textOffset, textColor);
 						}
 
 					}
@@ -314,7 +333,7 @@ public class AbilitiesHud extends HudElement {
 		return closestAbilityIndex;
 	}
 
-	public void renderTooltip(Screen screen, MatrixStack matrices, int mouseX, int mouseY) {
+	public void renderTooltip(Screen screen, DrawContext context, int mouseX, int mouseY) {
 		if (!UnofficialMonumentaModClient.options.abilitiesDisplay_enabled
 			    || !UnofficialMonumentaModClient.options.abilitiesDisplay_tooltips
 			    || dragging
@@ -337,10 +356,10 @@ public class AbilitiesHud extends HudElement {
 
 		// renderTooltip assumes that the coordinates passed in are absolute...
 		Rectangle dimension = getDimension();
-		matrices.push();
-		matrices.translate(-dimension.x, -dimension.y, 0);
-		screen.renderTooltip(matrices, Text.of(abilityInfo.name), mouseX + dimension.x, mouseY + dimension.y);
-		matrices.pop();
+		context.getMatrices().push();
+		context.getMatrices().translate(-dimension.x, -dimension.y, 0);
+		context.drawTooltip(MinecraftClient.getInstance().textRenderer, Text.of(abilityInfo.name), mouseX + dimension.x, mouseY + dimension.y);
+		context.getMatrices().pop();
 		// TODO also display ability description?
 	}
 

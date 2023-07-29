@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 
 import net.minecraft.util.thread.ThreadExecutor;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -14,7 +15,9 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 @Mixin(ThreadExecutor.class)
 public abstract class ThreadExecutorMixin<R extends Runnable> {
 
-	Pattern teamRemovalPattern = Pattern.compile("Player is either on another team or not on any team. Cannot remove from team '\\w+'\\.");
+	@Unique
+    final
+    Pattern teamRemovalPattern = Pattern.compile("Player is either on another team or not on any team. Cannot remove from team '\\w+'\\.");
 
 	/**
 	 * Silences errors that happen when a player leaves monumenta or changes shard.

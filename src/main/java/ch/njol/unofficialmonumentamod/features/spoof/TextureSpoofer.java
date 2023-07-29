@@ -265,13 +265,13 @@ public class TextureSpoofer {
 
 	public static class SpoofItem {
 		@Expose
-		public String item;
+		public final String item;
 		@Expose
-		public String displayName;
+		public final String displayName;
 		@Expose
 		public String hope;
 		@Expose
-		public boolean override = false;
+		public final boolean override = false;
 		
 		protected boolean invalid;
 

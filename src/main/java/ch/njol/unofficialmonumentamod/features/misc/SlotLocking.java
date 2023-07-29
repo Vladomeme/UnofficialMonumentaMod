@@ -7,23 +7,15 @@ import ch.njol.unofficialmonumentamod.mixins.KeyBindingAccessor;
 import ch.njol.unofficialmonumentamod.mixins.screen.HandledScreenAccessor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawableHelper;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
@@ -32,7 +24,6 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.*;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.random.Random;
-import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -41,7 +32,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Map;
 import java.util.Objects;
 
 import static ch.njol.minecraft.uiframework.hud.HudElement.drawSprite;
@@ -96,7 +86,7 @@ public class SlotLocking {
 	}
 	
 	public static class SlotLockData {
-		public LockedSlot[] lockedSlots = new LockedSlot[41];
+		public final LockedSlot[] lockedSlots = new LockedSlot[41];
 	}
 	
 	private static ModSpriteAtlasHolder atlas;
@@ -108,7 +98,7 @@ public class SlotLocking {
 	
 	private static Identifier BASE_LOCK;
 
-	public static KeyBinding LOCK_KEY = new KeyBinding("unofficial-monumenta-mod.keybinds.lock_slot", GLFW.GLFW_KEY_L, "unofficial-monumenta-mod.keybinds.category");
+	public static final KeyBinding LOCK_KEY = new KeyBinding("unofficial-monumenta-mod.keybinds.lock_slot", GLFW.GLFW_KEY_L, "unofficial-monumenta-mod.keybinds.category");
 
 	private static final Style lockTextStyle = Style.EMPTY.withColor(TextColor.fromRgb(0xc49417)).withBold(true);
 
@@ -154,7 +144,7 @@ public class SlotLocking {
 		return isLockedSlot(getLockedSlot(slot));
 	}
 
-	public void drawSlot(Screen screen, MatrixStack matrices, Slot slot) {
+	public void drawSlot(Screen screen, DrawContext context, Slot slot) {
 		int originX = slot.x;
 		int originY = slot.y;
 		
@@ -165,14 +155,14 @@ public class SlotLocking {
 		}
 		
 		if (isLockedSlot(locked) && LOCK != null) {
-			drawSprite(matrices, atlas.getSprite(LOCK), originX, originY, 16, 16);
+			drawSprite(context, atlas.getSprite(LOCK), originX, originY, 16, 16);
 		}
 		
 		//status of special locks
 		if (UnofficialMonumentaModClient.options.lock_renderDebuggingAdvancedLock) {
-			DrawableHelper.drawTextWithShadow(matrices, MinecraftClient.getInstance().textRenderer, Text.of("L"), originX, originY, locked.lockPickup ? 0xFFFFFFFF : 0xFFFF0000);//locked.lockPickup
-			DrawableHelper.drawTextWithShadow(matrices, MinecraftClient.getInstance().textRenderer, Text.of("D"), originX + MinecraftClient.getInstance().textRenderer.getWidth("L"), originY, locked.lockDrop ? 0xFFFFFFFF : 0xFFFF0000);//locked.lockDrop
-			DrawableHelper.drawTextWithShadow(matrices, MinecraftClient.getInstance().textRenderer, Text.of("H"), originX + MinecraftClient.getInstance().textRenderer.getWidth("LD"), originY, locked.lockHalfPickup ? 0xFFFFFFFF : 0xFFFF0000);//locked.lockHalfPickup
+			context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, Text.of("L"), originX, originY, locked.lockPickup ? 0xFFFFFFFF : 0xFFFF0000);//locked.lockPickup
+			context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, Text.of("D"), originX + MinecraftClient.getInstance().textRenderer.getWidth("L"), originY, locked.lockDrop ? 0xFFFFFFFF : 0xFFFF0000);//locked.lockDrop
+			context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, Text.of("H"), originX + MinecraftClient.getInstance().textRenderer.getWidth("LD"), originY, locked.lockHalfPickup ? 0xFFFFFFFF : 0xFFFF0000);//locked.lockHalfPickup
 		}
 	}
 
@@ -194,35 +184,7 @@ public class SlotLocking {
 		}
 	}
 	
-	public void drawPolygon(MatrixStack matrices, int originX, int originY, float radius, int sides, int color) {
-		float a = (float)(color >> 24 & 0xFF) / 255.0f;
-		float r = (float)(color >> 16 & 0xFF) / 255.0f;
-		float g = (float)(color >> 8 & 0xFF) / 255.0f;
-		float b = (float)(color & 0xFF) / 255.0f;
-		
-		Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
-		RenderSystem.setShader(GameRenderer::getPositionColorProgram);
-		RenderSystem.enableBlend();
-		RenderSystem.disableTexture();
-		RenderSystem.defaultBlendFunc();
-		
-		BufferBuilder bufferBuilder = Tessellator.getInstance().getBuffer();
-		
-		bufferBuilder.begin(VertexFormat.DrawMode.TRIANGLE_FAN, VertexFormats.POSITION_COLOR);
-		bufferBuilder.vertex(positionMatrix, originX, originY, 0.0f).color(a, r, g, b).next();
-		
-		//very optimised (trust)
-		for (int i = 0; i <= sides; i++) {
-			double angle = ((Math.PI * 2) * i / sides) + Math.toRadians(180);
-			bufferBuilder.vertex(originX + Math.sin(angle) * radius, originY + Math.cos(angle) * radius, 0.0f).color(a, r, g, b).next();
-		}
-		
-		BufferRenderer.draw(bufferBuilder.end());
-		RenderSystem.enableTexture();
-		RenderSystem.disableBlend();
-	}
-	
-	public void tickRender(MatrixStack matrices, int mouseX, int mouseY) {
+	public void tickRender(DrawContext context, int mouseX, int mouseY) {
 		if (!(MinecraftClient.getInstance().currentScreen instanceof HandledScreen containerScreen) || MinecraftClient.getInstance().player == null || activeSlot == null) {
 			return;
 		}
@@ -254,19 +216,19 @@ public class SlotLocking {
 			LockedSlot slot = config.lockedSlots[slotIndex];
 			//is active and being held
 			
-			drawPolygon(matrices, absoluteSlotX + 8, absoluteSlotY + 8, circleSize.getValue(), 360, 0x404040a0);
+			Utils.drawFilledPolygon(context, absoluteSlotX + 8, absoluteSlotY + 8, circleSize.getValue(), 360, 0x404040a0);
 			
-			drawSprite(matrices, atlas.getSprite(LEFT_CLICK_LOCK), absoluteSlotX - 15, absoluteSlotY - 15, 16, 16);
+			drawSprite(context, atlas.getSprite(LEFT_CLICK_LOCK), absoluteSlotX - 15, absoluteSlotY - 15, 16, 16);
 			if (slot.lockPickup) {
-				drawSprite(matrices, atlas.getSprite(BASE_LOCK), absoluteSlotX - 15, absoluteSlotY - 15, 16, 16);
+				drawSprite(context, atlas.getSprite(BASE_LOCK), absoluteSlotX - 15, absoluteSlotY - 15, 16, 16);
 			}
-			drawSprite(matrices, atlas.getSprite(RIGHT_CLICK_LOCK), absoluteSlotX + 15, absoluteSlotY - 15, 16, 16);
+			drawSprite(context, atlas.getSprite(RIGHT_CLICK_LOCK), absoluteSlotX + 15, absoluteSlotY - 15, 16, 16);
 			if (slot.lockHalfPickup) {
-				drawSprite(matrices, atlas.getSprite(BASE_LOCK), absoluteSlotX + 15, absoluteSlotY - 15, 16, 16);
+				drawSprite(context, atlas.getSprite(BASE_LOCK), absoluteSlotX + 15, absoluteSlotY - 15, 16, 16);
 			}
-			drawSprite(matrices, atlas.getSprite(DROP_LOCK), absoluteSlotX, absoluteSlotY + 15, 16, 16);
+			drawSprite(context, atlas.getSprite(DROP_LOCK), absoluteSlotX, absoluteSlotY + 15, 16, 16);
 			if (slot.lockDrop) {
-				drawSprite(matrices, atlas.getSprite(BASE_LOCK), absoluteSlotX, absoluteSlotY + 15, 16, 16);
+				drawSprite(context, atlas.getSprite(BASE_LOCK), absoluteSlotX, absoluteSlotY + 15, 16, 16);
 			}
 			
 		} else if (ticksSinceLastLockKeyClick <= 2) {

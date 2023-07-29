@@ -16,17 +16,16 @@ import net.minecraft.util.Hand;
 
 public class DiscordPresence {
 	private DiscordRPC lib = null;
-	String applicationId = "989262014562070619";
-	String steamId = "";
-	private DiscordEventHandlers handlers = null;
-	Long start_time = System.currentTimeMillis() / 1000;
+	final String applicationId = "989262014562070619";
+	final String steamId = "";
+	final Long start_time = System.currentTimeMillis() / 1000;
 
-	MinecraftClient mc = MinecraftClient.getInstance();
+	final MinecraftClient mc = MinecraftClient.getInstance();
 
 	Integer times = 0;
-	Timer t = new Timer();
+	final Timer t = new Timer();
 
-	public static DiscordPresence INSTANCE = new DiscordPresence();
+	public static final DiscordPresence INSTANCE = new DiscordPresence();
 
 	private boolean initialized = false;
 	public void Init() {
@@ -35,7 +34,7 @@ public class DiscordPresence {
 		}
 
 		lib = DiscordRPC.INSTANCE;
-		handlers = new DiscordEventHandlers();
+		DiscordEventHandlers handlers = new DiscordEventHandlers();
 
 		handlers.ready = (user) -> UnofficialMonumentaModClient.LOGGER.info("Ready! Connected to Discord with " + user.username + "#" + user.discriminator);
 		lib.Discord_Initialize(applicationId, handlers, true, steamId);
@@ -87,29 +86,29 @@ public class DiscordPresence {
 		if (mc.world != null) {
 			times++;
 			final boolean isSinglePlayer = mc.isInSingleplayer();
-			final boolean isOnMonumenta = UnofficialMonumentaModClient.isOnMonumenta();
+			final boolean userOnMonumenta = UnofficialMonumentaModClient.isOnMonumenta();
 
 			DiscordRichPresence presence = new DiscordRichPresence();
 			presence.startTimestamp = start_time;
-			presence.largeImageKey = isOnMonumenta ? "monumenta" : "minecraft512";
+			presence.largeImageKey = userOnMonumenta ? "monumenta" : "minecraft512";
 			presence.largeImageText = getLargeImageText();
 			presence.instance = 1;
 
 			if (isSinglePlayer) {
 				presence.state = "Playing Singleplayer";
 			} else {
-				if (!isOnMonumenta) {
+				if (!userOnMonumenta) {
 					presence.state = "Playing Multiplayer - " + (mc.getCurrentServerEntry() != null ? mc.getCurrentServerEntry().name.toUpperCase() : "Unknown");
 				} else {
 					String shard = Locations.getShortShard();
 
 					presence.state = !Objects.equals(shard, "unknown") ? "Playing Monumenta - " + shard : "Playing Monumenta";
 
-					String coolName = ShardData.getOfficialName(shard);
+					String shardName = ShardData.getOfficialName(shard);
 					if (!shard.equals("unknown")) {
 						//set small image
 						presence.smallImageKey = shard;
-						presence.smallImageText = coolName != null ? coolName : shard;
+						presence.smallImageText = shardName != null ? shardName : shard;
 					}
 
 					//set details
@@ -128,7 +127,7 @@ public class DiscordPresence {
 								if (shard.equals("unknown")) {
 									continue;
 								}
-								detail = replacer.replaceIn(detail, coolName != null ? coolName : shard);
+								detail = replacer.replaceIn(detail, shardName != null ? shardName : shard);
 							}
 							case "holding" -> {
 								if (mc.player == null) {
@@ -156,11 +155,22 @@ public class DiscordPresence {
 		}
 	}
 
+	public void updateDiscordRPCDetails() {
+		shouldUpdate = true;
+		getDetectedDetails(UnofficialMonumentaModClient.options.discordDetails);
+	}
+
+	private final ArrayList<Match> cachedReplacers = new ArrayList<>();
+	private boolean shouldUpdate = true;
+
 	private ArrayList<Match> getDetectedDetails(String detailString) {
+		if (!cachedReplacers.isEmpty() && shouldUpdate) {
+			return cachedReplacers;
+		}
+
+		cachedReplacers.clear();
 		int lastOpenBracketFound = -1;
 		StringBuilder currentReplacerString = new StringBuilder();
-
-		ArrayList<Match> matches = new ArrayList<>();
 
 		for (int i = 0; i < detailString.length(); i++) {
 			char c = detailString.charAt(i);
@@ -169,7 +179,7 @@ public class DiscordPresence {
 				lastOpenBracketFound = i;
 			} else if (c == '}' && lastOpenBracketFound != -1) {
 				//add the replacer to the matches
-				matches.add(new Match(currentReplacerString.toString()));
+				cachedReplacers.add(new Match(currentReplacerString.toString()));
 				//reset the string builder and open bracket index
 				currentReplacerString = new StringBuilder();
 				lastOpenBracketFound = -1;
@@ -178,11 +188,12 @@ public class DiscordPresence {
 			}
 		}
 
-		return matches;
+		shouldUpdate = false;
+		return cachedReplacers;
 	}
 
 	private static class Match {
-		String match;
+		final String match;
 
 		Match(String match) {
 			this.match = match;
